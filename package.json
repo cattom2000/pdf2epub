@@ -1,0 +1,13 @@
+{
+  "name": "pdf2epub",
+  "version": "1.0.0",
+  "description": "将拍照PDF转换为EPUB电子书的工具，利用Gemini 2.5系列模型的OCR能力提取文本并保持原有排版",
+  "main": "src/main.py",
+  "scripts": {
+    "test": "python test_environment.py",
+    "start": "python src/main.py"
+  },
+  "keywords": ["pdf", "epub", "gemini", "ocr", "converter"],
+  "author": "PDF2EPUB Project",
+  "license": "MIT"
+}
