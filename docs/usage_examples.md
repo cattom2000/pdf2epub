@@ -35,8 +35,17 @@ python test_minigenai.py --model gemini-2.5-flash --base-url https://your-gemini
 ## 2. 基本使用
 
 ```bash
-# 转换PDF到EPUB
+# 转换PDF到EPUB（默认富文本模式）
 python src/main.py --input /path/to/your/book.pdf --output /path/to/output/book.epub
+
+# 指定电子书标题
+python src/main.py --input /path/to/your/book.pdf --output /path/to/output/book.epub --title "我的电子书"
+
+# 使用纯文本模式
+python src/main.py --input /path/to/your/book.pdf --output /path/to/output/book.epub --mode simple
+
+# 使用富文本模式（保持原始格式）
+python src/main.py --input /path/to/your/book.pdf --output /path/to/output/book.epub --mode rich
 
 # 使用更高DPI以获得更好的OCR效果
 python src/main.py --input /path/to/your/book.pdf --output /path/to/output/book.epub --dpi 300
@@ -79,6 +88,21 @@ python src/main.py --input book.pdf --output book.epub --page-range 1 10
 python src/main.py --input book.pdf --output book.epub --page-range 50 100
 ```
 
+## 3.3 处理时间监控
+
+程序会自动显示处理时间统计和预计完成时间：
+
+```
+开始处理PDF文件: book.pdf
+正在提取PDF页面...
+PDF页面提取完成，耗时: 2.1秒
+正在使用Gemini提取文本...
+处理页面 1/50
+页面 1 处理完成，耗时: 6.8秒
+预计剩余时间: 5.7分钟 (49 页)
+...
+```
+
 ## 4. 故障排除
 
 ### 4.1 常见错误
@@ -101,7 +125,34 @@ python src/main.py --input book.pdf --output book.epub --page-range 50 100
    ```
    解决方案：降低DPI参数，或分批处理大文件
 
-### 4.2 性能优化建议
+4. **Gemini API调用失败**
+   ```
+   Error: 文本提取失败，已重试 3 次
+   ```
+   解决方案：检查网络连接，确认API密钥有效，稍后重试
+
+### 4.2 段落处理问题
+
+如果生成的EPUB文件中段落格式不正确，请检查：
+
+1. 确认PDF文件质量良好，OCR识别准确
+2. Gemini模型可能未能正确识别段落边界
+3. 对于复杂排版的文档，可能需要手动调整
+
+### 4.3 处理模式选择问题
+
+如果生成的EPUB文件格式不符合预期，请尝试切换处理模式：
+
+1. **富文本模式问题**：如果标题层级或文本对齐不正确，可能是Gemini模型未能正确识别结构
+   - 解决方案：尝试使用纯文本模式 (`--mode simple`)
+
+2. **纯文本模式问题**：如果缺少标题层级信息，可能需要使用富文本模式
+   - 解决方案：使用富文本模式 (`--mode rich`)
+
+3. **标题提取问题**：如果章节标题不正确，检查PDF文件中的标题格式
+   - 解决方案：确保原始文档中有清晰的标题标识
+
+### 4.4 性能优化建议
 
 1. 对于大文件，考虑先分割PDF再处理：
    ```bash

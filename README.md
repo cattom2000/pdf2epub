@@ -8,6 +8,11 @@
 - 利用Gemini 2.5-flash/2.5-pro提取文本
 - 保持原有PDF排版和章节结构
 - 生成标准EPUB格式电子书
+- 智能处理段落换行，将视觉换行合并为逻辑段落
+- 记录并保持原始文档格式（标题层级、文本对齐等）
+- 自动重试机制，处理Gemini API调用失败情况
+- 实时显示处理时间和预计完成时间
+- 支持富文本和纯文本两种处理模式
 
 ## 安装依赖
 
@@ -40,8 +45,17 @@ python test_minigenai.py --model gemini-2.5-flash --base-url https://your-gemini
 # 设置Gemini API密钥
 export GEMINI_API_KEY=your_api_key_here
 
-# 运行转换器（处理整个PDF）
+# 运行转换器（处理整个PDF，使用默认设置）
 python src/main.py --input /path/to/input.pdf --output /path/to/output.epub
+
+# 运行转换器（指定电子书标题）
+python src/main.py --input /path/to/input.pdf --output /path/to/output.epub --title "我的电子书"
+
+# 运行转换器（使用纯文本模式）
+python src/main.py --input /path/to/input.pdf --output /path/to/output.epub --mode simple
+
+# 运行转换器（使用富文本模式，保持原始格式）
+python src/main.py --input /path/to/input.pdf --output /path/to/output.epub --mode rich
 
 # 运行转换器（使用自定义代理URL）
 python src/main.py --input /path/to/input.pdf --output /path/to/output.epub --base-url https://your-gemini-proxy.com
@@ -74,5 +88,7 @@ genai.configure(api_key="your_api_key_here")
 
 - `--input` 或 `-i`：输入PDF文件路径
 - `--output` 或 `-o`：输出EPUB文件路径
-- `--dpi`：图像DPI，默认为200
+- `--title`：EPUB电子书的标题
+- `--mode`：处理模式，可选'simple'（纯文本）或'rich'（富文本），默认为'rich'
+- `--dpi`：图像DPI，默认为300
 - `--model`：使用的Gemini模型，可选'flash'或'pro'，默认为'flash'
