@@ -94,17 +94,22 @@ def main():
                     blocks = gemini_client.extract_rich_structure(image_path)
                     
                     # 2. 智能提取章节标题，并从内容中移除，避免重复
-                    chapter_title = f"第 {i+1} 部分" # 默认标题
+                    chapter_title = None  # 默认不设置标题
                     title_found = False
                     for block in blocks:
                         # 假设文档中的主标题是 level 1 的 heading
                         if block.get('type') == 'heading' and block.get('level') == 1 and not title_found:
-                            chapter_title = block.get('content', chapter_title).strip()
+                            chapter_title = block.get('content', '').strip()
                             blocks.remove(block) # 从正文内容块中移除这个标题
                             title_found = True
                             break
                     
-                    structured_chapters.append({'title': chapter_title, 'blocks': blocks})
+                    # 只有在找到标题时才添加章节
+                    if chapter_title:
+                        structured_chapters.append({'title': chapter_title, 'blocks': blocks})
+                    else:
+                        # 如果没有找到标题，将内容作为无标题章节添加
+                        structured_chapters.append({'title': '', 'blocks': blocks})
                     os.remove(image_path)
                     
                     page_end_time = time.time()

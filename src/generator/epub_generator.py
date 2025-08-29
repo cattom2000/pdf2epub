@@ -208,18 +208,19 @@ class EpubGenerator:
         
         epub_chapters = []
         for i, chapter_data in enumerate(structured_data):
-            chapter_title = chapter_data.get('title', f'章节 {i+1}')
+            chapter_title = chapter_data.get('title', '')
             blocks = chapter_data.get('blocks', [])
             
             epub_chapter = epub.EpubHtml(
-                title=chapter_title,
+                title=chapter_title if chapter_title else f'第{i+1}页',
                 file_name=f'chap_{i+1:03d}.xhtml',
                 lang='zh'
             )
             
             html_parts = []
-            # 添加章节大标题
-            html_parts.append(f'<h1>{chapter_title}</h1>')
+            # 只有在有标题时才添加章节大标题
+            if chapter_title:
+                html_parts.append(f'<h1>{chapter_title}</h1>')
 
             # 解析内容块并生成HTML
             for block in blocks:
