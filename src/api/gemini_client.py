@@ -181,6 +181,75 @@ class GeminiClient:
         
         raise Exception(f"结构化文本提取失败，已重试 {max_retries} 次: {last_exception}")
     
+    def is_table_of_contents_page(self, image_path, max_retries=3):
+        """
+        检测图像是否为目录页面
+        
+        Args:
+            image_path (str): 图像文件路径
+            max_retries (int): 最大重试次数
+            
+        Returns:
+            bool: True表示是目录页面，False表示不是
+        """
+        last_exception = None
+        
+        for attempt in range(max_retries):
+            try:
+                prompt = """
+                请分析这张图片，判断它是否为目录页面（Table of Contents）。
+                目录页面的特征包括：
+                1. 标题包含"目录"、"Contents"、"Table of Contents"等字样
+                2. 页面包含多个条目，每个条目后面有页码
+                3. 有明显的层级结构（章节编号、缩进等）
+                4. 页面主要由标题和页码组成，而非完整的段落文本
+                
+                请只返回"true"或"false"：
+                - 如果是目录页面，返回"true"
+                - 如果不是目录页面，返回"false"
+                """.strip()
+                
+                image_base64 = self.encode_image(image_path)
+                
+                contents = [
+                    {
+                        "role": "user",
+                        "parts": [
+                            {"text": prompt},
+                            {
+                                "inline_data": {
+                                    "mime_type": "image/png",
+                                    "data": image_base64
+                                }
+                            }
+                        ]
+                    }
+                ]
+                
+                response = self.client.generate_content(self.model_name, contents)
+                
+                # 解析响应
+                if isinstance(response, str):
+                    response_text = response.strip().lower()
+                    return response_text == "true"
+                else:
+                    response_text = str(response).strip().lower()
+                    return "true" in response_text
+                    
+            except Exception as e:
+                last_exception = e
+                if attempt < max_retries - 1:
+                    wait_time = 5 + attempt * 5
+                    print(f"目录页面检测第 {attempt + 1} 次尝试失败: {str(e)}")
+                    print(f"等待 {wait_time} 秒后进行第 {attempt + 2} 次尝试...")
+                    time.sleep(wait_time)
+                else:
+                    print(f"目录页面检测第 {attempt + 1} 次尝试失败: {str(e)}")
+        
+        # 如果检测失败，默认返回False，继续处理页面
+        print(f"目录页面检测失败，默认不跳过该页面: {last_exception}")
+        return False
+    
     def extract_rich_structure(self, image_path, max_retries=3):
         """
         从图像中提取文本并识别丰富的文档结构（如对齐、标题级别等）。
@@ -256,3 +325,72 @@ class GeminiClient:
                     print(f"第 {attempt + 1} 次尝试失败: {str(e)}")
         
         raise Exception(f"结构化文本提取失败，已重试 {max_retries} 次: {last_exception}")
+    
+    def is_table_of_contents_page(self, image_path, max_retries=3):
+        """
+        检测图像是否为目录页面
+        
+        Args:
+            image_path (str): 图像文件路径
+            max_retries (int): 最大重试次数
+            
+        Returns:
+            bool: True表示是目录页面，False表示不是
+        """
+        last_exception = None
+        
+        for attempt in range(max_retries):
+            try:
+                prompt = """
+                请分析这张图片，判断它是否为目录页面（Table of Contents）。
+                目录页面的特征包括：
+                1. 标题包含"目录"、"Contents"、"Table of Contents"等字样
+                2. 页面包含多个条目，每个条目后面有页码
+                3. 有明显的层级结构（章节编号、缩进等）
+                4. 页面主要由标题和页码组成，而非完整的段落文本
+                
+                请只返回"true"或"false"：
+                - 如果是目录页面，返回"true"
+                - 如果不是目录页面，返回"false"
+                """.strip()
+                
+                image_base64 = self.encode_image(image_path)
+                
+                contents = [
+                    {
+                        "role": "user",
+                        "parts": [
+                            {"text": prompt},
+                            {
+                                "inline_data": {
+                                    "mime_type": "image/png",
+                                    "data": image_base64
+                                }
+                            }
+                        ]
+                    }
+                ]
+                
+                response = self.client.generate_content(self.model_name, contents)
+                
+                # 解析响应
+                if isinstance(response, str):
+                    response_text = response.strip().lower()
+                    return response_text == "true"
+                else:
+                    response_text = str(response).strip().lower()
+                    return "true" in response_text
+                    
+            except Exception as e:
+                last_exception = e
+                if attempt < max_retries - 1:
+                    wait_time = 5 + attempt * 5
+                    print(f"目录页面检测第 {attempt + 1} 次尝试失败: {str(e)}")
+                    print(f"等待 {wait_time} 秒后进行第 {attempt + 2} 次尝试...")
+                    time.sleep(wait_time)
+                else:
+                    print(f"目录页面检测第 {attempt + 1} 次尝试失败: {str(e)}")
+        
+        # 如果检测失败，默认返回False，继续处理页面
+        print(f"目录页面检测失败，默认不跳过该页面: {last_exception}")
+        return False

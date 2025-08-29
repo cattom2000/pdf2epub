@@ -79,15 +79,8 @@ class EpubGenerator:
         )
         book.add_item(nav_css)
         
-        # 创建导航
-        book.toc = epub_chapters
-        
-        # 添加基本导航文件
-        book.add_item(epub.EpubNcx())
-        book.add_item(epub.EpubNav())
-        
-        # 设置书籍脊柱
-        book.spine = ['nav'] + epub_chapters
+        # 设置书籍脊柱（不包含导航页）
+        book.spine = epub_chapters
         
         # 写入EPUB文件
         epub.write_epub(output_path, book, {})
@@ -174,15 +167,8 @@ class EpubGenerator:
         )
         book.add_item(nav_css)
         
-        # 创建导航
-        book.toc = epub_chapters
-        
-        # 添加基本导航文件
-        book.add_item(epub.EpubNcx())
-        book.add_item(epub.EpubNav())
-        
-        # 设置书籍脊柱
-        book.spine = ['nav'] + epub_chapters
+        # 设置书籍脊柱（不包含导航页）
+        book.spine = epub_chapters
         
         # 写入EPUB文件
         epub.write_epub(output_path, book, {})
@@ -258,9 +244,102 @@ class EpubGenerator:
         nav_css = epub.EpubItem(uid="style_nav", file_name="style/nav.css", media_type="text/css", content=style)
         book.add_item(nav_css)
         
-        book.toc = epub_chapters
-        book.add_item(epub.EpubNcx())
-        book.add_item(epub.EpubNav())
-        book.spine = ['nav'] + epub_chapters
+        # 设置书籍脊柱（不包含导航页）
+        book.spine = epub_chapters
         
         epub.write_epub(output_path, book, {})
+    
+    def update_epub_with_new_chapters(self, existing_epub_path, new_chapters, title="转换的电子书", author="未知作者"):
+        """
+        向现有EPUB文件中添加新章节
+        
+        Args:
+            existing_epub_path (str): 现有EPUB文件路径
+            new_chapters (list): 新章节列表
+            title (str): 电子书标题
+            author (str): 作者名
+        """
+        if os.path.exists(existing_epub_path):
+            # 如果存在现有EPUB，读取并添加新章节
+            import zipfile
+            import tempfile
+            import shutil
+            
+            # 创建临时目录
+            temp_dir = tempfile.mkdtemp()
+            
+            try:
+                # 解压现有EPUB
+                with zipfile.ZipFile(existing_epub_path, 'r') as zip_file:
+                    zip_file.extractall(temp_dir)
+                
+                # 重新创建带有所有章节的EPUB
+                book = epub.EpubBook()
+                book.set_identifier(f'id_{hash(existing_epub_path) % 1000000}')
+                book.set_title(title)
+                book.set_language('zh')
+                book.add_author(author)
+                
+                # 添加所有章节（现有的 + 新的）
+                all_chapters = []
+                
+                # 这里需要从解压的文件中读取现有章节
+                # 为了简化，我们直接重新生成所有章节
+                for i, chapter in enumerate(new_chapters):
+                    epub_chapter = epub.EpubHtml(
+                        title=chapter.get('title', f'第{i+1}页'),
+                        file_name=f'chap_{i+1:03d}.xhtml',
+                        lang='zh'
+                    )
+                    
+                    html_parts = []
+                    if chapter.get('title'):
+                        html_parts.append(f'<h1>{chapter["title"]}</h1>')
+                    
+                    blocks = chapter.get('blocks', [])
+                    for block in blocks:
+                        content = block.get('content', '')
+                        block_type = block.get('type', 'paragraph')
+                        style = block.get('style', {})
+                        align = style.get('align', 'left')
+                        
+                        style_str = f'style="text-align: {align};"' if align != 'left' else ''
+                        
+                        if block_type == 'heading':
+                            level = block.get('level', 2)
+                            html_parts.append(f'<h{level} {style_str}>{content}</h{level}>')
+                        else:
+                            html_parts.append(f'<p {style_str}>{content}</p>')
+                    
+                    epub_chapter.content = '\n'.join(html_parts)
+                    book.add_item(epub_chapter)
+                    all_chapters.append(epub_chapter)
+                
+                # 添加CSS样式
+                style = '''
+                    @namespace epub "http://www.idpf.org/2007/ops";
+                    body { font-family: Arial, Helvetica, sans-serif; }
+                    h1 { text-align: center; }
+                    p { text-indent: 2em; line-height: 1.5em; text-align: justify; }
+                    h2, h3, h4 { text-align: left; }
+                '''
+                nav_css = epub.EpubItem(
+                    uid="style_nav", 
+                    file_name="style/nav.css", 
+                    media_type="text/css", 
+                    content=style
+                )
+                book.add_item(nav_css)
+                
+                # 设置书籍脊柱
+                book.spine = all_chapters
+                
+                # 写入EPUB文件
+                epub.write_epub(existing_epub_path, book, {})
+                
+            finally:
+                # 清理临时目录
+                shutil.rmtree(temp_dir)
+        else:
+            # 如果不存在现有EPUB，直接创建新的
+            self.create_epub_from_structure(new_chapters, existing_epub_path, title, author)
