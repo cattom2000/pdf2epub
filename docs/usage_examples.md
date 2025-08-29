@@ -44,7 +44,7 @@ python src/main.py --input /path/to/your/book.pdf --output /path/to/output/book.
 # 使用纯文本模式
 python src/main.py --input /path/to/your/book.pdf --output /path/to/output/book.epub --mode simple
 
-# 使用富文本模式（保持原始格式）
+# 使用富文本模式（保持原始格式，按章节组织内容）
 python src/main.py --input /path/to/your/book.pdf --output /path/to/output/book.epub --mode rich
 
 # 使用更高DPI以获得更好的OCR效果
@@ -53,6 +53,10 @@ python src/main.py --input /path/to/your/book.pdf --output /path/to/output/book.
 # 使用Gemini 2.5-pro模型（如果可用）
 python src/main.py --input /path/to/your/book.pdf --output /path/to/output/book.epub --model pro
 ```
+
+## 2.1 章节组织模式
+
+富文本模式下，转换器会自动识别文档中的章节结构，并将跨页面的同一章节内容合并到一起，而不是按页面分割。这样生成的EPUB文件更符合原文档的结构，提供更好的阅读体验。
 
 ## 3. 高级选项
 
