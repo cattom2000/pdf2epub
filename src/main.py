@@ -83,6 +83,7 @@ def main():
             print("正在使用Gemini提取版面结构 (富文本模式)...")
             text_start_time = time.time()
             structured_chapters = []
+            current_chapter = None
             total_pages = len(images)
             
             for i, image_path in enumerate(images):
@@ -93,23 +94,33 @@ def main():
                     # 1. 调用新的方法获取结构化数据
                     blocks = gemini_client.extract_rich_structure(image_path)
                     
-                    # 2. 智能提取章节标题，并从内容中移除，避免重复
-                    chapter_title = None  # 默认不设置标题
-                    title_found = False
+                    # 2. 处理内容块，按章节组织
                     for block in blocks:
-                        # 假设文档中的主标题是 level 1 的 heading
-                        if block.get('type') == 'heading' and block.get('level') == 1 and not title_found:
-                            chapter_title = block.get('content', '').strip()
-                            blocks.remove(block) # 从正文内容块中移除这个标题
-                            title_found = True
-                            break
+                        block_type = block.get('type')
+                        block_content = block.get('content', '').strip()
+                        
+                        # 如果是章节标题（level 1 heading）
+                        if block_type == 'heading' and block.get('level') == 1:
+                            # 创建新章节
+                            chapter_title = block_content
+                            current_chapter = {
+                                'title': chapter_title,
+                                'blocks': []
+                            }
+                            structured_chapters.append(current_chapter)
+                        else:
+                            # 如果是普通内容块，添加到当前章节
+                            if current_chapter is None:
+                                # 如果还没有章节，创建一个默认章节
+                                current_chapter = {
+                                    'title': '',
+                                    'blocks': []
+                                }
+                                structured_chapters.append(current_chapter)
+                            
+                            # 将内容块添加到当前章节
+                            current_chapter['blocks'].append(block)
                     
-                    # 只有在找到标题时才添加章节
-                    if chapter_title:
-                        structured_chapters.append({'title': chapter_title, 'blocks': blocks})
-                    else:
-                        # 如果没有找到标题，将内容作为无标题章节添加
-                        structured_chapters.append({'title': '', 'blocks': blocks})
                     os.remove(image_path)
                     
                     page_end_time = time.time()
